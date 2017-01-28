@@ -24,6 +24,7 @@ class MedProcessor(Preprocessor):
     def run(self, lines):
         last_outer = ''
         outputs = []
+        last_outer = None
 
         for line in lines:
             m = self.LINE_REG.match(line)
@@ -39,10 +40,13 @@ class MedProcessor(Preprocessor):
                 else:
                     prefix = '##'
 
-                outputs.append('{} {} \n{}\n\n'.format(prefix, CODES.get(title), notes))
+                outputs.append('{} {} \n{}'.format(prefix, CODES.get(title), notes))
                 if not spaces:
                     last_outer = title
             else:
+                if last_outer and line.strip():
+                    self.structured[last_outer]['notes'] += " " + line.strip()
+                last_outer = None
                 outputs.append(line)
 
         return outputs
