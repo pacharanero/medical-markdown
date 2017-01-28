@@ -3,9 +3,10 @@ import markdown
 from med.medmarkdown import MedExtension
 
 def test_simple():
+    m = MedExtension()
     html = markdown.markdown("""
-Line one
-!pmh this patient has lots of history, not sure what else to write.
-Line two
-    """, extensions=[MedExtension()])
-    print html
+        OBS/Observation
+    """, extensions=[m])
+
+    s = m.get_structured_data()
+    assert s['OBS']['notes'] == 'Observation', s
