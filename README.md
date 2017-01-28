@@ -2,7 +2,8 @@ Tests for a very early, unelaborated idea about a Markdown-like specification
 for quickly writing free text medical notes that can be programmatically 
 parsed into structured data, with terminologies where appropriate.
 
-This is currently implemented as a python-markdown extension.
+This is currently implemented as a python-markdown extension, and the 
+specification is found in medical-markdown.
 
 ## Installation
 
