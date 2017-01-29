@@ -46,7 +46,8 @@ class MedProcessor(Preprocessor):
             else:
                 if last_outer and line.strip():
                     self.structured[last_outer]['notes'] += " " + line.strip()
-                last_outer = None
+                if line.strip():
+                    last_outer = None
                 outputs.append(line)
 
         return outputs
