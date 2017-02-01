@@ -27,9 +27,9 @@ This is the basic specification for Medical Markdown, which specifies only featu
 
 Much of the standard Markdown specification is included in the Medical Markdown specification, where this made sense and didn't interfere with medical/clinical utility.
 
-> Basic Medical Markdown = Daring Fireball Markdown + Medical Markdown 
+> Basic Medical Markdown = Daring Fireball Markdown + Medical Markdown bits
 
-
+[Basic Medical Markdown Specification][]
 
 ## Extended Specification ##
 
@@ -74,6 +74,7 @@ Here are some ways to contribute to the Medical Markdown project:
 [prsb]: http://theprsb.org
 [aomrc-headings]: http://theprsb.org/publications/bible-sets-out-the-latest-agreed-standards
 [dfb-markdown]: http://daringfireball.net/projects/markdown/
+[Basic Medical Markdown Specification]: https://github.com/open-health-hub/medical-markdown/medical-markdown.md
 [GitHub]: http://www.github.com
 [Discourse]: http://www.discourse.org
 [Jekyll]: http://www.jekyllrb.com
