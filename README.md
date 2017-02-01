@@ -29,7 +29,9 @@ Much of the standard Markdown specification is included in the Medical Markdown 
 
 > Basic Medical Markdown = Daring Fireball Markdown + Medical Markdown bits
 
-[Basic Medical Markdown Specification][]
+Further details are in the medical-markdown Wiki [Medical Markdown Specification][]
+
+
 
 ## Extended Specification ##
 
@@ -44,6 +46,9 @@ An example of a feature that requires real-time interaction between the user and
 
 > Extended Medical Markdown = Basic Medical Markdown + Synchronous Features
 
+Further details are in the medical-markdown Wiki [Medical Markdown Specification][]
+
+
 
 ## Credits and Acknowledgements ##
 
@@ -53,7 +58,7 @@ An example of a feature that requires real-time interaction between the user and
 
 * I'd also like to credit Gina Trapani, creator of [Todo.txt][], whose inspiration I have also used in the way I've handled the `TODO/`` 'jobs list' tag.
 
-* The Professional Records Standards Body deserve due acknowledgement for the work done on developing clear standards for medical records in the UK
+* The Professional Records Standards Body deserve due acknowledgement for the work done on developing clear standards for medical records in the UK, and the Academy of Medical Royal Colleges and it's constituent colleges are recognised for adding their endorsement to the medical record content standards.
 
 
 
@@ -74,7 +79,7 @@ Here are some ways to contribute to the Medical Markdown project:
 [prsb]: http://theprsb.org
 [aomrc-headings]: http://theprsb.org/publications/bible-sets-out-the-latest-agreed-standards
 [dfb-markdown]: http://daringfireball.net/projects/markdown/
-[Basic Medical Markdown Specification]: https://github.com/open-health-hub/medical-markdown/medical-markdown.md
+[Basic Medical Markdown Specification]: https://github.com/open-health-hub/medical-markdown/wiki
 [GitHub]: http://www.github.com
 [Discourse]: http://www.discourse.org
 [Jekyll]: http://www.jekyllrb.com
