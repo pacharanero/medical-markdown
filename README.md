@@ -79,7 +79,7 @@ Here are some ways to contribute to the Medical Markdown project:
 [prsb]: http://theprsb.org
 [aomrc-headings]: http://theprsb.org/publications/bible-sets-out-the-latest-agreed-standards
 [dfb-markdown]: http://daringfireball.net/projects/markdown/
-[Basic Medical Markdown Specification]: https://github.com/open-health-hub/medical-markdown/wiki
+[Medical Markdown Specification]: https://github.com/open-health-hub/medical-markdown/wiki
 [GitHub]: http://www.github.com
 [Discourse]: http://www.discourse.org
 [Jekyll]: http://www.jekyllrb.com
