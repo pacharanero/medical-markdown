@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medical Markdown — Live Demo</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --panel: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --muted: #6c757d;
+    --accent: #0d6efd;
+    --accent-light: #e7f1ff;
+    --code-bg: #f1f3f5;
+    --section-bg: #f8f9fa;
+    --green: #198754;
+    --orange: #fd7e14;
+    --purple: #6f42c1;
+    --teal: #0dcaf0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  header h1 span {
+    color: var(--accent);
+  }
+
+  header .subtitle {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .tab-bar {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+    background: var(--code-bg);
+    border-radius: 6px;
+    padding: 3px;
+  }
+
+  .tab-bar button {
+    padding: 6px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .tab-bar button.active {
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .pane-header {
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .divider {
+    width: 1px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  #editor {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    resize: none;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", Menlo, monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    background: var(--panel);
+    color: var(--text);
+    outline: none;
+    tab-size: 4;
+  }
+
+  #output {
+    flex: 1;
+    padding: 16px 24px;
+    overflow-y: auto;
+    background: var(--panel);
+  }
+
+  /* Rendered HTML styles */
+  #output.view-html section.med-section {
+    margin-bottom: 16px;
+    border-left: 3px solid var(--accent);
+    padding: 8px 12px;
+    background: var(--section-bg);
+    border-radius: 0 6px 6px 0;
+  }
+
+  #output.view-html section.med-subsection {
+    margin: 8px 0 8px 12px;
+    border-left: 3px solid var(--teal);
+    padding: 6px 10px;
+    background: var(--panel);
+    border-radius: 0 4px 4px 0;
+  }
+
+  #output.view-html h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  #output.view-html h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--teal);
+    margin-bottom: 2px;
+  }
+
+  #output.view-html p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  #output.view-html h1 {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* JSON view */
+  #output.view-json {
+    font-family: "SF Mono", "Fira Code", Menlo, monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    line-height: 1.6;
+  }
+
+  .json-key { color: var(--accent); }
+  .json-string { color: var(--green); }
+  .json-bracket { color: var(--muted); }
+
+  /* Raw HTML view */
+  #output.view-source {
+    font-family: "SF Mono", "Fira Code", Menlo, monospace;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .code-ref {
+    display: inline-block;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 0 5px;
+    border-radius: 3px;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: 0.8em;
+    font-weight: 600;
+  }
+
+  /* Syntax reference panel */
+  .syntax-ref {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .syntax-ref .group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .syntax-ref .group-label {
+    font-weight: 600;
+    margin-right: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .container { flex-direction: column; }
+    .divider { width: auto; height: 1px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>Medical</span> Markdown</h1>
+  <span class="subtitle">Interactive demo — type clinical notes on the left</span>
+  <div class="tab-bar">
+    <button class="active" data-view="html">Preview</button>
+    <button data-view="json">JSON</button>
+    <button data-view="source">HTML Source</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="pane">
+    <div class="pane-header">Input</div>
+    <textarea id="editor" spellcheck="false">
+# A&amp;E Attendance — Dr Smith
+
+PC/ Chest pain, worse on exertion
+HPC/ 54 year old male presenting with 2 hour history
+of central crushing chest pain radiating to the left arm.
+Associated with nausea and diaphoresis.
+PMH/ Hypertension, Type 2 diabetes
+DH/ Metformin 500mg BD, Ramipril 5mg OD
+ALLG/ NKDA
+SH/ Non-smoker, occasional alcohol
+OE/ Alert and oriented, appears uncomfortable
+    CVS/ HS I+II+0, no murmurs, JVP not raised
+    RS/ Air entry equal bilaterally, no added sounds
+    GI/ Abdomen soft, non-tender
+IMP/ Possible acute coronary syndrome
+DDX/ GORD, musculoskeletal, PE
+IX/ 12-lead ECG, troponin, FBC, U&amp;E, CRP
+PLAN/ Serial ECGs, repeat troponin at 6hrs,
+aspirin 300mg stat, GTN PRN, cardiology referral
+</textarea>
+    <div class="syntax-ref">
+      <div class="group">
+        <span class="group-label">History:</span>
+        <span class="code-ref">PC/</span>
+        <span class="code-ref">HPC/</span>
+        <span class="code-ref">PMH/</span>
+        <span class="code-ref">DH/</span>
+        <span class="code-ref">FH/</span>
+        <span class="code-ref">SH/</span>
+        <span class="code-ref">ALLG/</span>
+      </div>
+      <div class="group">
+        <span class="group-label">Exam:</span>
+        <span class="code-ref">OE/</span>
+        <span class="code-ref">RS/</span>
+        <span class="code-ref">CVS/</span>
+        <span class="code-ref">CNS/</span>
+        <span class="code-ref">GI/</span>
+        <span class="code-ref">MSK/</span>
+      </div>
+      <div class="group">
+        <span class="group-label">Assessment:</span>
+        <span class="code-ref">IMP/</span>
+        <span class="code-ref">DDX/</span>
+        <span class="code-ref">IX/</span>
+        <span class="code-ref">PLAN/</span>
+        <span class="code-ref">RX/</span>
+      </div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="pane">
+    <div class="pane-header">Output</div>
+    <div id="output" class="view-html"></div>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// Medical Markdown parser (JS mirror of the Rust crate, for demo purposes)
+// =========================================================================
+
+const CODES = {
+  PC:   "Presenting Complaint",
+  HPC:  "History of Presenting Complaint",
+  PMH:  "Past Medical History",
+  DH:   "Drug History",
+  FH:   "Family History",
+  SH:   "Social History",
+  ALLG: "Allergies",
+  ROS:  "Review of Systems",
+  OE:   "On Examination",
+  RS:   "Respiratory System",
+  CVS:  "Cardiovascular System",
+  GI:   "Gastrointestinal System",
+  CNS:  "Central Nervous System",
+  PNS:  "Peripheral Nervous System",
+  MSK:  "Musculoskeletal System",
+  DERM: "Dermatology",
+  ENT:  "Ear, Nose and Throat",
+  EYE:  "Ophthalmology",
+  GU:   "Genitourinary System",
+  HS:   "Heart Sounds",
+  PR:   "Pulse Rate",
+  BP:   "Blood Pressure",
+  RR:   "Respiratory Rate",
+  TEMP: "Temperature",
+  SPO2: "Oxygen Saturation",
+  GCS:  "Glasgow Coma Scale",
+  AVPU: "AVPU Score",
+  IMP:  "Impression",
+  DIAG: "Diagnosis",
+  DDX:  "Differential Diagnosis",
+  PLAN: "Plan",
+  IX:   "Investigations",
+  RX:   "Treatment",
+  TODO: "Jobs List",
+};
+
+function parseMedLine(line) {
+  const slash = line.indexOf("/");
+  if (slash <= 0) return null;
+  const code = line.slice(0, slash);
+  if (!/^[A-Z0-9]+$/.test(code) || !/[A-Z]/.test(code)) return null;
+  const notes = line.slice(slash + 1).trim();
+  return { code, notes };
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Simple inline markdown: **bold**, *italic*, `code`
+function renderInline(text) {
+  let s = escapeHtml(text);
+  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/\*(.+?)\*/g, "<em>$1</em>");
+  s = s.replace(/`(.+?)`/g, "<code>$1</code>");
+  return s;
+}
+
+function parse(input) {
+  const lines = input.split("\n");
+  const sections = [];       // { code, heading, notes, subs: [{code, heading, notes}] }
+  const htmlParts = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const raw = lines[i];
+    const trimmed = raw.trimStart();
+    const indent = raw.length - trimmed.length;
+    const med = parseMedLine(trimmed);
+
+    if (med && indent === 0) {
+      // Top-level medical section
+      const heading = CODES[med.code] || med.code;
+      const notesParts = [];
+      if (med.notes) notesParts.push(med.notes);
+      const subs = [];
+      i++;
+
+      while (i < lines.length) {
+        const r = lines[i];
+        if (r.trim() === "") break;
+        const t = r.trimStart();
+        const ind = r.length - t.length;
+        const m2 = parseMedLine(t);
+
+        if (m2 && ind === 0) break; // new top-level
+
+        if (m2 && ind > 0) {
+          // Sub-section
+          const subHeading = CODES[m2.code] || m2.code;
+          const subParts = [];
+          if (m2.notes) subParts.push(m2.notes);
+          i++;
+          while (i < lines.length) {
+            const r2 = lines[i];
+            if (r2.trim() === "") break;
+            if (parseMedLine(r2.trimStart())) break;
+            subParts.push(r2.trim());
+            i++;
+          }
+          subs.push({ code: m2.code, heading: subHeading, notes: subParts.join(" ") });
+        } else {
+          notesParts.push(r.trim());
+          i++;
+        }
+      }
+
+      sections.push({ code: med.code, heading, notes: notesParts.join(" "), subs });
+    } else {
+      // Regular markdown line — pass through
+      const line = raw;
+      if (/^#{1,6}\s/.test(line)) {
+        const level = line.match(/^(#{1,6})\s/)[1].length;
+        const text = line.replace(/^#{1,6}\s+/, "");
+        htmlParts.push(`<h${level}>${renderInline(text)}</h${level}>`);
+      } else if (line.trim() === "") {
+        htmlParts.push("");
+      } else {
+        htmlParts.push(`<p>${renderInline(line)}</p>`);
+      }
+      i++;
+      continue;
+    }
+
+    // Render this section to HTML
+    const sec = sections.at(-1);
+    let html = `<section class="med-section med-${sec.code.toLowerCase()}" data-med-code="${sec.code}">`;
+    html += `<h2>${escapeHtml(sec.heading)}</h2>`;
+    if (sec.notes) {
+      html += `<p>${renderInline(sec.notes)}</p>`;
+    }
+    for (const sub of sec.subs) {
+      html += `<section class="med-subsection med-${sub.code.toLowerCase()}" data-med-code="${sub.code}">`;
+      html += `<h3>${escapeHtml(sub.heading)}</h3>`;
+      if (sub.notes) html += `<p>${renderInline(sub.notes)}</p>`;
+      html += `</section>`;
+    }
+    html += `</section>`;
+    htmlParts.push(html);
+  }
+
+  // Build structured data
+  const structured = {};
+  for (const s of sections) {
+    const entry = { notes: s.notes };
+    for (const sub of s.subs) {
+      entry[sub.code] = sub.notes;
+    }
+    structured[s.code] = entry;
+  }
+
+  return { html: htmlParts.join("\n"), structured };
+}
+
+// =========================================================================
+// UI
+// =========================================================================
+
+const editor = document.getElementById("editor");
+const output = document.getElementById("output");
+let currentView = "html";
+
+function syntaxHighlightJson(obj) {
+  const raw = JSON.stringify(obj, null, 2);
+  return raw.replace(/"([^"]+)"(?=\s*:)/g, '<span class="json-key">"$1"</span>')
+            .replace(/:\s*"([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+            .replace(/[{}[\]]/g, '<span class="json-bracket">$&</span>');
+}
+
+function update() {
+  const result = parse(editor.value);
+  if (currentView === "html") {
+    output.className = "view-html";
+    output.innerHTML = result.html;
+  } else if (currentView === "json") {
+    output.className = "view-json";
+    output.innerHTML = syntaxHighlightJson(result.structured);
+  } else {
+    output.className = "view-source";
+    output.textContent = result.html;
+  }
+}
+
+editor.addEventListener("input", update);
+
+document.querySelectorAll(".tab-bar button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-bar button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentView = btn.dataset.view;
+    update();
+  });
+});
+
+// Strip leading newline from textarea default value
+editor.value = editor.value.replace(/^\n/, "");
+update();
+</script>
+</body>
+</html>
