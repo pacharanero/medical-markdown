@@ -1,5 +1,6 @@
 //! Structured data extraction from a parsed medical markdown AST.
 
+use crate::model::{MedicalDocument, SCHEMA_VERSION, Section, Span, SubSection};
 use crate::plugin::{MedicalNotes, MedicalSection, MedicalSubSection};
 use markdown_it::Node;
 use serde_json::{Map, Value};
@@ -60,6 +61,59 @@ pub fn extract_structured_data(root: &Node) -> Value {
     }
 
     Value::Object(result)
+}
+
+/// Walk the AST and extract structured clinical data as a typed, versioned
+/// [`MedicalDocument`].
+///
+/// This is the primary representation for Rust consumers: it carries a
+/// [`SCHEMA_VERSION`], preserves document order, and exposes full source
+/// [`Span`]s for each section and sub-section. The flat
+/// [`extract_structured_data`] shape remains available for MCP/wire use.
+///
+/// Documents with no clinical codes (plain prose) extract to an empty
+/// `sections` list; this never errors.
+pub fn extract_document(root: &Node) -> MedicalDocument {
+    let mut sections = Vec::new();
+
+    for child in &root.children {
+        if let Some(section) = child.node_value.downcast_ref::<MedicalSection>() {
+            let mut notes_parts: Vec<String> = Vec::new();
+            let mut subsections: Vec<SubSection> = Vec::new();
+
+            for grandchild in &child.children {
+                if let Some(sub) = grandchild.node_value.downcast_ref::<MedicalSubSection>() {
+                    subsections.push(SubSection {
+                        code: sub.code.clone(),
+                        heading: sub.heading.clone(),
+                        notes: collect_notes(&grandchild.children),
+                        source: Span {
+                            start_line: sub.source_line,
+                            end_line: sub.end_line,
+                        },
+                    });
+                } else if let Some(notes) = grandchild.node_value.downcast_ref::<MedicalNotes>() {
+                    notes_parts.push(normalize_whitespace(&notes.text));
+                }
+            }
+
+            sections.push(Section {
+                code: section.code.clone(),
+                heading: section.heading.clone(),
+                notes: notes_parts.join(" "),
+                subsections,
+                source: Span {
+                    start_line: section.source_line,
+                    end_line: section.end_line,
+                },
+            });
+        }
+    }
+
+    MedicalDocument {
+        schema_version: SCHEMA_VERSION,
+        sections,
+    }
 }
 
 fn collect_notes(children: &[Node]) -> String {

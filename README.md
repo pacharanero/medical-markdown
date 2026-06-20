@@ -76,10 +76,13 @@ Medical Markdown is designed to be embedded as a backend Rust crate dependency (
 let doc = medical_markdown::parse(body);
 
 if doc.has_codes() {
-    let data = doc.structured();   // serde_json::Value, empty object for plain prose
-    let html = doc.html();         // semantic HTML for display surfaces
+    let document = doc.document();  // typed MedicalDocument: versioned, with source spans
+    let data = doc.structured();    // flat serde_json::Value for MCP/wire use
+    let html = doc.html();          // semantic HTML for display surfaces
 }
 ```
+
+For Rust consumers that persist and diff derived structure (such as GitEHR), prefer the typed `MedicalDocument` from `.document()`: it carries a `schema_version`, preserves order, and exposes full source spans for each section and sub-section. The flat `.structured()` shape is a convenience projection for wire/MCP use. Both are documented in [`docs/output-schema.md`](docs/output-schema.md).
 
 `medical_markdown::has_codes(body)` is a cheap pre-check (no full parse) for deciding whether to offer a structured view at all; most plain-prose bodies answer `false` quickly. To use a custom vocabulary held in memory, build a `CodeRegistry` from a JSON string (or any reader) and pass it by reference, reusing it across calls:
 

@@ -55,11 +55,13 @@
 mod api;
 mod codes;
 mod extract;
+mod model;
 mod plugin;
 mod registry;
 
 pub use api::{ParsedDocument, has_codes, parse, parse_with_registry};
 pub use codes::{CLINICAL_CODES, ClinicalCode, CodeCategory};
-pub use extract::extract_structured_data;
+pub use extract::{extract_document, extract_structured_data};
+pub use model::{MedicalDocument, SCHEMA_VERSION, Section, Span, SubSection};
 pub use plugin::{MedicalNotes, MedicalSection, MedicalSubSection, add, add_with_registry};
 pub use registry::{CodeRegistry, OwnedClinicalCode};

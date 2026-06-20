@@ -15,7 +15,8 @@
 use markdown_it::{MarkdownIt, Node};
 use serde_json::Value;
 
-use crate::extract::extract_structured_data;
+use crate::extract::{extract_document, extract_structured_data};
+use crate::model::MedicalDocument;
 use crate::plugin::{self, MedicalSection, parse_med_code};
 use crate::registry::CodeRegistry;
 
@@ -29,7 +30,17 @@ pub struct ParsedDocument {
 }
 
 impl ParsedDocument {
-    /// Extract structured clinical data as JSON.
+    /// Extract structured clinical data as the typed, versioned
+    /// [`MedicalDocument`] contract.
+    ///
+    /// This is the representation Rust consumers should prefer: it carries a
+    /// schema version, preserves order, and exposes full source spans.
+    pub fn document(&self) -> MedicalDocument {
+        extract_document(&self.ast)
+    }
+
+    /// Extract structured clinical data as the flat JSON shape, for MCP/wire
+    /// use.
     ///
     /// Plain-prose bodies with no clinical codes extract to an empty object;
     /// this never errors.

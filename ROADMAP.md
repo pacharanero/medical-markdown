@@ -44,11 +44,12 @@ These block clean embedding of the crate as a backend dependency and come first.
 
 ## GitEHR embedding - Priority 2: stable, typed, versioned output contract
 
-GitEHR persists derived structure into State files and diffs it across time, so the output shape is a contract. See [`spec.md`](spec.md) "Priority 2".
+GitEHR persists derived structure into State files and diffs it across time, so the output shape is a contract. See [`spec.md`](spec.md) "Priority 2" and the documented schema in [`docs/output-schema.md`](docs/output-schema.md).
 
-- [ ] Typed output model alongside `serde_json::Value`, e.g. `MedicalDocument { sections: Vec<Section { code, heading, notes, subsections, source }> }`, with the JSON form as its serialisation
-- [ ] Document and version the extraction schema: specify the `{ "CODE": { "notes": ... }, "_source_map": {...} }` shape, the `CODE.SUBCODE` key convention, and add an explicit `schema_version`
-- [ ] Full source spans (start..end byte or line range) per section and sub-section in `_source_map`, not just a start line, to support non-destructive editing and structured diffs
+- [x] Typed output model alongside `serde_json::Value`: `MedicalDocument { schema_version, sections: Vec<Section { code, heading, notes, subsections, source }> }` via `extract_document()` / `ParsedDocument::document()`, with the flat `serde_json::Value` shape kept for MCP/wire use
+- [x] Document and version the extraction schema: both shapes specified in `docs/output-schema.md`, including the `CODE.SUBCODE` key convention, with an explicit `schema_version` (`SCHEMA_VERSION`) on the typed document
+- [x] Full source spans (inclusive start..end line range) per section and sub-section on the typed document, to support non-destructive editing and structured diffs
+- [ ] Byte-offset spans (in addition to line spans) if a consumer needs sub-line precision; deferred as line spans are robust to source normalisation
 
 ## GitEHR embedding - Priority 3: validation and diagnostics
 

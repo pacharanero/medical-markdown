@@ -19,8 +19,11 @@ pub struct MedicalSection {
     pub code: String,
     /// The full heading text (e.g. "Presenting Complaint")
     pub heading: String,
-    /// 1-based line number in the source document
+    /// 1-based line of the first line of the section, inclusive.
     pub source_line: usize,
+    /// 1-based line of the last line of the section, inclusive. Covers the
+    /// section's own notes and all of its sub-sections.
+    pub end_line: usize,
 }
 
 /// A nested clinical sub-section (e.g. `    RS/ clear bilaterally` under `OE/`).
@@ -32,8 +35,10 @@ pub struct MedicalSubSection {
     pub code: String,
     /// The full heading text (e.g. "Respiratory System")
     pub heading: String,
-    /// 1-based line number in the source document
+    /// 1-based line of the first line of the sub-section, inclusive.
     pub source_line: usize,
+    /// 1-based line of the last line of the sub-section, inclusive.
+    pub end_line: usize,
 }
 
 /// Free-text notes within a clinical section.
@@ -173,6 +178,7 @@ impl BlockRule for MedicalBlockScanner {
             code: code.to_string(),
             heading,
             source_line: state.line + 1, // 1-based
+            end_line: state.line + 1,    // updated to the true end after consumption
         });
 
         let mut notes_parts: Vec<String> = Vec::new();
@@ -232,10 +238,13 @@ impl BlockRule for MedicalBlockScanner {
                 }
 
                 let sub_text = sub_notes_parts.join("\n");
+                // `line` now points at the first line past this sub-section, so
+                // the 1-based inclusive end line is exactly `line`.
                 let mut sub_node = Node::new(MedicalSubSection {
                     code: sub_code.to_string(),
                     heading: sub_heading,
                     source_line: sub_source_line,
+                    end_line: line,
                 });
                 if !sub_text.is_empty() {
                     sub_node.children.push(make_notes_node(sub_text, state.md));
@@ -253,6 +262,14 @@ impl BlockRule for MedicalBlockScanner {
         if !notes_parts.is_empty() {
             let text = notes_parts.join("\n");
             section_node.children.push(make_notes_node(text, state.md));
+        }
+
+        // Now that the full extent is known, record the section's end line.
+        // 0-based `state.line` + `lines_consumed` gives the 1-based inclusive
+        // last line of the section.
+        let section_end_line = state.line + lines_consumed;
+        if let Some(section) = section_node.cast_mut::<MedicalSection>() {
+            section.end_line = section_end_line;
         }
 
         Some((section_node, lines_consumed))
