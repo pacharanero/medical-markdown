@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+set -v
+
+# Build an optimised release binary
+cargo build --release
+
+echo ""
+echo "Binary available at: target/release/medmd"

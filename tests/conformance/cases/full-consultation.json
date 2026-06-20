@@ -1,0 +1,16 @@
+{
+  "PC": { "notes": "Mobility issues" },
+  "HPC": { "notes": "None" },
+  "OE": { "RS": "None", "CVS": "Not working", "notes": "Pt is definitely not moving" },
+  "IMP": { "notes": "Patient is very ill" },
+  "PLAN": { "notes": "Take a paracetamol and sit by the fire" },
+  "_source_map": {
+    "PC": 1,
+    "HPC": 2,
+    "OE": 3,
+    "OE.RS": 4,
+    "OE.CVS": 5,
+    "IMP": 6,
+    "PLAN": 7
+  }
+}

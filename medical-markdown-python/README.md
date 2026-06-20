@@ -1,3 +1,5 @@
+> **Legacy / historical reference.** This Python package is the original experimental implementation of Medical Markdown. It has been superseded by the canonical Rust crate at the repository root, and its behaviour is now captured by the language-agnostic conformance suite in `../tests/conformance/`. It is kept only for historical reference and is slated for removal once nothing depends on it. New work should target the Rust crate; do not add features here.
+
 Tests for medical-markdown-python experimental implementation
 
 This is currently implemented as a python-markdown extension, and the 

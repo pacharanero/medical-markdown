@@ -1,0 +1,7 @@
+PC/ Mobility issues
+HPC/ None
+OE/ Pt is definitely not moving
+    RS/ None
+    CVS/ Not working
+IMP/ Patient is very ill
+PLAN/ Take a paracetamol and sit by the fire

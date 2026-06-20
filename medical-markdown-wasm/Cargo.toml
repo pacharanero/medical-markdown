@@ -1,0 +1,15 @@
+[package]
+name = "medical-markdown-wasm"
+version = "0.1.0"
+edition = "2024"
+description = "WASM bindings for medical-markdown"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+medical-markdown = { path = ".." }
+markdown-it = "0.6"
+serde_json = { version = "1", features = ["preserve_order"] }
+wasm-bindgen = "0.2.117"

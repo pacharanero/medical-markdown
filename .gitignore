@@ -94,3 +94,9 @@ ENV/
 # Added by cargo
 /target
 Cargo.lock
+
+# WASM build output
+/pkg
+
+# Claude
+.claude/

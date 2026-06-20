@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+set -v
+
+# Run the CLI tool in development mode
+# Pass a file path as an argument, or - to read from stdin
+# Examples:
+#   s/dev medical-markdown-python/test_data/simple.txt
+#   s/dev medical-markdown-python/test_data/simple.txt --json
+#   s/dev medical-markdown-python/test_data/simple.txt --html
+#   echo "PC/ chest pain" | s/dev -
+
+cargo run -- "$@"
