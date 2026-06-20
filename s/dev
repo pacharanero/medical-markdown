@@ -5,9 +5,9 @@ set -v
 # Run the CLI tool in development mode
 # Pass a file path as an argument, or - to read from stdin
 # Examples:
-#   s/dev medical-markdown-python/test_data/simple.txt
-#   s/dev medical-markdown-python/test_data/simple.txt --json
-#   s/dev medical-markdown-python/test_data/simple.txt --html
+#   s/dev examples/consultation.md
+#   s/dev examples/consultation.md --json
+#   s/dev examples/consultation.md --html
 #   echo "PC/ chest pain" | s/dev -
 
 cargo run -- "$@"

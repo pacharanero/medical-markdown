@@ -27,4 +27,4 @@ cargo test --test conformance
 2. Write `cases/<name>.json` with the expected extraction output.
 3. Run `cargo test --test conformance`.
 
-Keep cases small and focused on one behaviour each. The suite is intended to fully capture the behaviour of the legacy Python implementation under `medical-markdown-python/`, so that tree can be removed once nothing depends on it.
+Keep cases small and focused on one behaviour each. This suite captures the behaviour of the original Python implementation (now removed) and is the place to specify new behaviour as the language grows.

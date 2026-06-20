@@ -14,7 +14,7 @@ This specification is still evolving, and contributions are welcome. Please see 
 
 ### Canonical implementation
 
-The Rust crate in this repository is the single canonical implementation of Medical Markdown. The original Python package under `medical-markdown-python/` is retained only as a historical reference and will be removed once nothing depends on it. Behaviour is pinned by the language-agnostic gold-standard conformance suite in [`tests/conformance/`](tests/conformance/README.md): a behaviour is part of the spec when there is a fixture for it. See [`ROADMAP.md`](ROADMAP.md) for the direction, and [`spec.md`](spec.md) for the embedding requirements driving the near-term work (GitEHR is the first real consumer).
+The Rust crate in this repository is the single canonical implementation of Medical Markdown. The original Python package has been removed; its behaviour now lives in the language-agnostic gold-standard conformance suite in [`tests/conformance/`](tests/conformance/README.md), which pins behaviour as data: a behaviour is part of the spec when there is a fixture for it. See [`ROADMAP.md`](ROADMAP.md) for the direction, and [`spec.md`](spec.md) for the embedding requirements driving the near-term work (GitEHR is the first real consumer).
 
 
 
@@ -33,9 +33,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```bash
 s/install    # build the project
 s/test       # run the test suite
-s/dev medical-markdown-python/test_data/simple.txt          # run the CLI (outputs HTML + JSON)
-s/dev medical-markdown-python/test_data/simple.txt --json   # JSON structured data only
-s/dev medical-markdown-python/test_data/simple.txt --html   # HTML only
+s/dev examples/consultation.md          # run the CLI (outputs HTML + JSON)
+s/dev examples/consultation.md --json   # JSON structured data only
+s/dev examples/consultation.md --html   # HTML only
 echo "PC/ chest pain" | s/dev -                             # read from stdin
 ```
 

@@ -2,7 +2,7 @@
 
 ## Direction: Rust is the canonical implementation
 
-The Rust crate is now the single, authoritative implementation of Medical Markdown. The original Python package under `medical-markdown-python/` is retained only as a historical reference and is slated for removal once nothing depends on it. New behaviour is specified by the language-agnostic conformance suite under `tests/conformance/` (see [its README](tests/conformance/README.md)), not by either implementation's code. The conformance fixtures are the gold standard: a behaviour is "in the spec" when there is a fixture for it.
+The Rust crate is now the single, authoritative implementation of Medical Markdown. The original Python package has been removed; its behaviour is preserved by the language-agnostic conformance suite under `tests/conformance/` (see [its README](tests/conformance/README.md)). New behaviour is specified by that suite, not by implementation code. The conformance fixtures are the gold standard: a behaviour is "in the spec" when there is a fixture for it.
 
 Goals driving the near-term roadmap:
 
@@ -31,8 +31,7 @@ Goals driving the near-term roadmap:
 
 - [x] Language-agnostic gold-standard fixtures (`tests/conformance/`): paired `input.md` + `expected.json` cases that define the extraction contract independently of any implementation
 - [x] Rust harness that runs every fixture (`tests/conformance.rs`)
-- [ ] Port any remaining Python-only behaviour into fixtures, then mark Python ready for deletion
-- [ ] Remove `medical-markdown-python/` once no consumer depends on it
+- [x] Capture the legacy Python implementation's behaviour as fixtures and remove `medical-markdown-python/`
 
 ## GitEHR embedding - Priority 1: library ergonomics
 
