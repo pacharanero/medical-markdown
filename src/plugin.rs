@@ -1,10 +1,10 @@
 //! The markdown-it block rule plugin for medical markdown syntax.
 
 use markdown_it::parser::block::{BlockRule, BlockState};
-use markdown_it::parser::inline::InlineRoot;
 use markdown_it::{MarkdownIt, Node, NodeValue, Renderer};
 
 use crate::codes;
+use crate::registry::CodeRegistry;
 
 // ---------------------------------------------------------------------------
 // AST node types
@@ -19,6 +19,11 @@ pub struct MedicalSection {
     pub code: String,
     /// The full heading text (e.g. "Presenting Complaint")
     pub heading: String,
+    /// 1-based line of the first line of the section, inclusive.
+    pub source_line: usize,
+    /// 1-based line of the last line of the section, inclusive. Covers the
+    /// section's own notes and all of its sub-sections.
+    pub end_line: usize,
 }
 
 /// A nested clinical sub-section (e.g. `    RS/ clear bilaterally` under `OE/`).
@@ -30,6 +35,10 @@ pub struct MedicalSubSection {
     pub code: String,
     /// The full heading text (e.g. "Respiratory System")
     pub heading: String,
+    /// 1-based line of the first line of the sub-section, inclusive.
+    pub source_line: usize,
+    /// 1-based line of the last line of the sub-section, inclusive.
+    pub end_line: usize,
 }
 
 /// Free-text notes within a clinical section.
@@ -84,14 +93,9 @@ impl NodeValue for MedicalSubSection {
 
 impl NodeValue for MedicalNotes {
     fn render(&self, node: &Node, fmt: &mut dyn Renderer) {
-        fmt.open("p", &node.attrs);
-        if node.children.is_empty() {
-            fmt.text(&self.text);
-        } else {
-            fmt.contents(&node.children);
-        }
-        fmt.close("p");
-        fmt.cr();
+        // Transparent container — children are block-level elements
+        // (paragraphs, lists, etc.) produced by the full markdown parser.
+        fmt.contents(&node.children);
     }
 }
 
@@ -102,7 +106,7 @@ impl NodeValue for MedicalNotes {
 /// Matches a line like `CODE/ notes text`.
 /// Returns (code, notes_text) or None.
 /// This works on already-trimmed lines (from `state.get_line()`).
-fn parse_med_code(line: &str) -> Option<(&str, &str)> {
+pub(crate) fn parse_med_code(line: &str) -> Option<(&str, &str)> {
     let slash_pos = line.find('/')?;
     if slash_pos == 0 {
         return None;
@@ -129,12 +133,27 @@ fn raw_indent(state: &BlockState, line: usize) -> usize {
     offsets.first_nonspace - offsets.line_start
 }
 
-fn make_notes_node(text: String, state: &BlockState) -> Node {
-    let mapping = vec![(0, state.line_offsets[state.line].first_nonspace)];
+fn make_notes_node(text: String, md: &MarkdownIt) -> Node {
     let mut node = Node::new(MedicalNotes { text: text.clone() });
-    node.children
-        .push(Node::new(InlineRoot::new(text, mapping)));
+    // Parse notes as full markdown (block + inline) so that lists,
+    // multiple paragraphs, and other block elements work correctly.
+    let mut parsed = md.parse(&text);
+    node.children = std::mem::take(&mut parsed.children);
     node
+}
+
+/// Look up a heading for a code, checking the registry in md.ext first,
+/// then falling back to the built-in static codes.
+fn lookup_heading(state: &BlockState, code: &str) -> String {
+    if let Some(registry) = state.md.ext.get::<CodeRegistry>() {
+        return registry
+            .lookup(code)
+            .map(|c| c.heading.clone())
+            .unwrap_or_else(|| code.to_string());
+    }
+    codes::lookup(code)
+        .map(|c| c.heading.to_string())
+        .unwrap_or_else(|| code.to_string())
 }
 
 struct MedicalBlockScanner;
@@ -153,13 +172,13 @@ impl BlockRule for MedicalBlockScanner {
             return None;
         }
 
-        let heading = codes::lookup(code)
-            .map(|c| c.heading.to_string())
-            .unwrap_or_else(|| code.to_string());
+        let heading = lookup_heading(state, code);
 
         let mut section_node = Node::new(MedicalSection {
             code: code.to_string(),
             heading,
+            source_line: state.line + 1, // 1-based
+            end_line: state.line + 1,    // updated to the true end after consumption
         });
 
         let mut notes_parts: Vec<String> = Vec::new();
@@ -185,16 +204,16 @@ impl BlockRule for MedicalBlockScanner {
                 }
 
                 // Indented medical code — it's a sub-section
-                let sub_heading = codes::lookup(sub_code)
-                    .map(|c| c.heading.to_string())
-                    .unwrap_or_else(|| sub_code.to_string());
+                let sub_heading = lookup_heading(state, sub_code);
 
                 // Flush pending notes before the sub-section
                 if !notes_parts.is_empty() {
-                    let text = notes_parts.join(" ");
-                    section_node.children.push(make_notes_node(text, state));
+                    let text = notes_parts.join("\n");
+                    section_node.children.push(make_notes_node(text, state.md));
                     notes_parts.clear();
                 }
+
+                let sub_source_line = line + 1; // 1-based
 
                 let mut sub_notes_parts: Vec<String> = Vec::new();
                 if !sub_notes.is_empty() {
@@ -218,13 +237,17 @@ impl BlockRule for MedicalBlockScanner {
                     line += 1;
                 }
 
-                let sub_text = sub_notes_parts.join(" ");
+                let sub_text = sub_notes_parts.join("\n");
+                // `line` now points at the first line past this sub-section, so
+                // the 1-based inclusive end line is exactly `line`.
                 let mut sub_node = Node::new(MedicalSubSection {
                     code: sub_code.to_string(),
                     heading: sub_heading,
+                    source_line: sub_source_line,
+                    end_line: line,
                 });
                 if !sub_text.is_empty() {
-                    sub_node.children.push(make_notes_node(sub_text, state));
+                    sub_node.children.push(make_notes_node(sub_text, state.md));
                 }
                 section_node.children.push(sub_node);
             } else {
@@ -237,8 +260,16 @@ impl BlockRule for MedicalBlockScanner {
 
         // Flush remaining notes
         if !notes_parts.is_empty() {
-            let text = notes_parts.join(" ");
-            section_node.children.push(make_notes_node(text, state));
+            let text = notes_parts.join("\n");
+            section_node.children.push(make_notes_node(text, state.md));
+        }
+
+        // Now that the full extent is known, record the section's end line.
+        // 0-based `state.line` + `lines_consumed` gives the 1-based inclusive
+        // last line of the section.
+        let section_end_line = state.line + lines_consumed;
+        if let Some(section) = section_node.cast_mut::<MedicalSection>() {
+            section.end_line = section_end_line;
         }
 
         Some((section_node, lines_consumed))
@@ -251,5 +282,15 @@ impl BlockRule for MedicalBlockScanner {
 /// Call this after [`markdown_it::plugins::cmark::add`] so that standard
 /// Markdown still works alongside medical codes.
 pub fn add(md: &mut MarkdownIt) {
+    md.block.add_rule::<MedicalBlockScanner>();
+}
+
+/// Register the medical markdown plugin with a custom [`CodeRegistry`].
+///
+/// The registry is stored in the parser's extension storage and used
+/// for code lookups during parsing. This allows custom codes to be
+/// recognised alongside (or instead of) the built-in set.
+pub fn add_with_registry(md: &mut MarkdownIt, registry: CodeRegistry) {
+    md.ext.insert(registry);
     md.block.add_rule::<MedicalBlockScanner>();
 }

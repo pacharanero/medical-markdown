@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+set -v
+
+# Run the CLI tool in development mode
+# Pass a file path as an argument, or - to read from stdin
+# Examples:
+#   s/dev examples/consultation.md
+#   s/dev examples/consultation.md --json
+#   s/dev examples/consultation.md --html
+#   echo "PC/ chest pain" | s/dev -
+
+cargo run -- "$@"

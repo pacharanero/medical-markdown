@@ -1,11 +1,2 @@
-
 PC/ Mobility issues across multiple lines until
 we find a newline
-
-HPC/ None
-
-    RES/ None
-
-    CAR/ None
-
-

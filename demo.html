@@ -314,46 +314,27 @@ aspirin 300mg stat, GTN PRN, cardiology referral
   </div>
 </div>
 
-<script>
+<script type="module">
 // =========================================================================
-// Medical Markdown parser (JS mirror of the Rust crate, for demo purposes)
+// Parser: WASM (Rust crate) with JS fallback
 // =========================================================================
 
+let wasmParse = null;
+
+// JS fallback parser (used when WASM is not available)
 const CODES = {
-  PC:   "Presenting Complaint",
-  HPC:  "History of Presenting Complaint",
-  PMH:  "Past Medical History",
-  DH:   "Drug History",
-  FH:   "Family History",
-  SH:   "Social History",
-  ALLG: "Allergies",
-  ROS:  "Review of Systems",
-  OE:   "On Examination",
-  RS:   "Respiratory System",
-  CVS:  "Cardiovascular System",
-  GI:   "Gastrointestinal System",
-  CNS:  "Central Nervous System",
-  PNS:  "Peripheral Nervous System",
-  MSK:  "Musculoskeletal System",
-  DERM: "Dermatology",
-  ENT:  "Ear, Nose and Throat",
-  EYE:  "Ophthalmology",
-  GU:   "Genitourinary System",
-  HS:   "Heart Sounds",
-  PR:   "Pulse Rate",
-  BP:   "Blood Pressure",
-  RR:   "Respiratory Rate",
-  TEMP: "Temperature",
-  SPO2: "Oxygen Saturation",
-  GCS:  "Glasgow Coma Scale",
-  AVPU: "AVPU Score",
-  IMP:  "Impression",
-  DIAG: "Diagnosis",
-  DDX:  "Differential Diagnosis",
-  PLAN: "Plan",
-  IX:   "Investigations",
-  RX:   "Treatment",
-  TODO: "Jobs List",
+  PC:"Presenting Complaint",HPC:"History of Presenting Complaint",
+  PMH:"Past Medical History",DH:"Drug History",FH:"Family History",
+  SH:"Social History",ALLG:"Allergies",ROS:"Review of Systems",
+  OE:"On Examination",RS:"Respiratory System",CVS:"Cardiovascular System",
+  GI:"Gastrointestinal System",CNS:"Central Nervous System",
+  PNS:"Peripheral Nervous System",MSK:"Musculoskeletal System",
+  DERM:"Dermatology",ENT:"Ear, Nose and Throat",EYE:"Ophthalmology",
+  GU:"Genitourinary System",HS:"Heart Sounds",PR:"Pulse Rate",
+  BP:"Blood Pressure",RR:"Respiratory Rate",TEMP:"Temperature",
+  SPO2:"Oxygen Saturation",GCS:"Glasgow Coma Scale",AVPU:"AVPU Score",
+  IMP:"Impression",DIAG:"Diagnosis",DDX:"Differential Diagnosis",
+  PLAN:"Plan",IX:"Investigations",RX:"Treatment",TODO:"Jobs List",
 };
 
 function parseMedLine(line) {
@@ -361,15 +342,13 @@ function parseMedLine(line) {
   if (slash <= 0) return null;
   const code = line.slice(0, slash);
   if (!/^[A-Z0-9]+$/.test(code) || !/[A-Z]/.test(code)) return null;
-  const notes = line.slice(slash + 1).trim();
-  return { code, notes };
+  return { code, notes: line.slice(slash + 1).trim() };
 }
 
-function escapeHtml(str) {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function escapeHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// Simple inline markdown: **bold**, *italic*, `code`
 function renderInline(text) {
   let s = escapeHtml(text);
   s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
@@ -378,9 +357,9 @@ function renderInline(text) {
   return s;
 }
 
-function parse(input) {
+function jsFallbackParse(input) {
   const lines = input.split("\n");
-  const sections = [];       // { code, heading, notes, subs: [{code, heading, notes}] }
+  const sections = [];
   const htmlParts = [];
   let i = 0;
 
@@ -391,10 +370,8 @@ function parse(input) {
     const med = parseMedLine(trimmed);
 
     if (med && indent === 0) {
-      // Top-level medical section
       const heading = CODES[med.code] || med.code;
-      const notesParts = [];
-      if (med.notes) notesParts.push(med.notes);
+      const notesParts = med.notes ? [med.notes] : [];
       const subs = [];
       i++;
 
@@ -404,19 +381,14 @@ function parse(input) {
         const t = r.trimStart();
         const ind = r.length - t.length;
         const m2 = parseMedLine(t);
-
-        if (m2 && ind === 0) break; // new top-level
-
+        if (m2 && ind === 0) break;
         if (m2 && ind > 0) {
-          // Sub-section
           const subHeading = CODES[m2.code] || m2.code;
-          const subParts = [];
-          if (m2.notes) subParts.push(m2.notes);
+          const subParts = m2.notes ? [m2.notes] : [];
           i++;
           while (i < lines.length) {
             const r2 = lines[i];
-            if (r2.trim() === "") break;
-            if (parseMedLine(r2.trimStart())) break;
+            if (r2.trim() === "" || parseMedLine(r2.trimStart())) break;
             subParts.push(r2.trim());
             i++;
           }
@@ -426,10 +398,8 @@ function parse(input) {
           i++;
         }
       }
-
       sections.push({ code: med.code, heading, notes: notesParts.join(" "), subs });
     } else {
-      // Regular markdown line — pass through
       const line = raw;
       if (/^#{1,6}\s/.test(line)) {
         const level = line.match(/^(#{1,6})\s/)[1].length;
@@ -444,13 +414,10 @@ function parse(input) {
       continue;
     }
 
-    // Render this section to HTML
     const sec = sections.at(-1);
     let html = `<section class="med-section med-${sec.code.toLowerCase()}" data-med-code="${sec.code}">`;
     html += `<h2>${escapeHtml(sec.heading)}</h2>`;
-    if (sec.notes) {
-      html += `<p>${renderInline(sec.notes)}</p>`;
-    }
+    if (sec.notes) html += `<p>${renderInline(sec.notes)}</p>`;
     for (const sub of sec.subs) {
       html += `<section class="med-subsection med-${sub.code.toLowerCase()}" data-med-code="${sub.code}">`;
       html += `<h3>${escapeHtml(sub.heading)}</h3>`;
@@ -461,17 +428,22 @@ function parse(input) {
     htmlParts.push(html);
   }
 
-  // Build structured data
   const structured = {};
   for (const s of sections) {
     const entry = { notes: s.notes };
-    for (const sub of s.subs) {
-      entry[sub.code] = sub.notes;
-    }
+    for (const sub of s.subs) entry[sub.code] = sub.notes;
     structured[s.code] = entry;
   }
-
   return { html: htmlParts.join("\n"), structured };
+}
+
+// Unified parse function — uses WASM when available, JS fallback otherwise.
+function parse(input) {
+  if (wasmParse) {
+    const result = JSON.parse(wasmParse(input));
+    return { html: result.html, structured: result.structured };
+  }
+  return jsFallbackParse(input);
 }
 
 // =========================================================================
@@ -516,6 +488,17 @@ document.querySelectorAll(".tab-bar button").forEach(btn => {
 
 // Strip leading newline from textarea default value
 editor.value = editor.value.replace(/^\n/, "");
+
+// Try to load WASM module, fall back to JS parser
+try {
+  const wasm = await import("./pkg/medical_markdown_wasm.js");
+  await wasm.default();
+  wasmParse = wasm.parse;
+  console.log("Medical Markdown: using WASM parser");
+} catch (e) {
+  console.log("Medical Markdown: WASM not available, using JS fallback", e.message);
+}
+
 update();
 </script>
 </body>

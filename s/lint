@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+set -v
+
+# Run clippy linter and check formatting
+cargo clippy -- -D warnings
+cargo fmt -- --check

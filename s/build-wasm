@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+set -v
+
+# Build the WASM package for browser use
+# Requires wasm-pack: cargo install wasm-pack
+wasm-pack build medical-markdown-wasm --target web --out-dir ../pkg

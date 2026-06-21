@@ -12,6 +12,109 @@ As with Markdown, this specification is not intended to be all-encompassing and 
 
 This specification is still evolving, and contributions are welcome. Please see the section below on Contributions.
 
+### Canonical implementation
+
+The Rust crate in this repository is the single canonical implementation of Medical Markdown. The original Python package has been removed; its behaviour now lives in the language-agnostic gold-standard conformance suite in [`tests/conformance/`](tests/conformance/README.md), which pins behaviour as data: a behaviour is part of the spec when there is a fixture for it. See [`ROADMAP.md`](ROADMAP.md) for the direction, and [`spec.md`](spec.md) for the embedding requirements driving the near-term work (GitEHR is the first real consumer).
+
+
+
+## Getting started
+
+### Prerequisites
+
+You need a Rust toolchain installed. The easiest way is via [rustup](https://rustup.rs):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+### Quick start
+
+```bash
+s/install    # build the project
+s/test       # run the test suite
+s/dev examples/consultation.md          # run the CLI (outputs HTML + JSON)
+s/dev examples/consultation.md --json   # JSON structured data only
+s/dev examples/consultation.md --html   # HTML only
+echo "PC/ chest pain" | s/dev -                             # read from stdin
+```
+
+### All scripts
+
+| Script | Purpose |
+|--------|---------|
+| `s/install` | Install dependencies and build the project |
+| `s/dev` | Run the `medmd` CLI in development mode |
+| `s/test` | Run the test suite (`cargo test`) |
+| `s/lint` | Run clippy and check formatting |
+| `s/build` | Build an optimised release binary to `target/release/medmd` |
+| `s/build-wasm` | Build the WASM package to `pkg/` (requires `wasm-pack`) |
+
+### Custom codes
+
+You can extend the built-in clinical codes with a JSON file:
+
+```bash
+s/dev input.txt --codes custom-codes.json --json
+```
+
+The JSON file should contain an array of code definitions:
+
+```json
+[
+  { "code": "NEURO", "heading": "Neurological Examination", "category": "Examination" }
+]
+```
+
+Custom codes are merged with the built-in set. If a custom code has the same abbreviation as a built-in code, the custom heading takes precedence.
+
+### Using as a library (embedding)
+
+Medical Markdown is designed to be embedded as a backend Rust crate dependency (this is how GitEHR consumes it). The one-call entry point handles parser setup so a consumer goes straight from a Markdown body to structured data or HTML:
+
+```rust
+let doc = medical_markdown::parse(body);
+
+if doc.has_codes() {
+    let document = doc.document();  // typed MedicalDocument: versioned, with source spans
+    let data = doc.structured();    // flat serde_json::Value for MCP/wire use
+    let html = doc.html();          // semantic HTML for display surfaces
+}
+```
+
+For Rust consumers that persist and diff derived structure (such as GitEHR), prefer the typed `MedicalDocument` from `.document()`: it carries a `schema_version`, preserves order, and exposes full source spans for each section and sub-section. The flat `.structured()` shape is a convenience projection for wire/MCP use. Both are documented in [`docs/output-schema.md`](docs/output-schema.md).
+
+`medical_markdown::has_codes(body)` is a cheap pre-check (no full parse) for deciding whether to offer a structured view at all; most plain-prose bodies answer `false` quickly. To use a custom vocabulary held in memory, build a `CodeRegistry` from a JSON string (or any reader) and pass it by reference, reusing it across calls:
+
+```rust
+let registry = medical_markdown::CodeRegistry::from_json_str(codes_json)?;
+let doc = medical_markdown::parse_with_registry(body, &registry);
+```
+
+Plain-prose bodies with no clinical codes always extract to an empty structure and never error.
+
+### Conformance suite
+
+[`tests/conformance/`](tests/conformance/README.md) holds the gold-standard fixtures (paired `input.md` + `expected.json`) that define the extraction contract independently of any implementation. Run them with:
+
+```bash
+cargo test --test conformance
+```
+
+### Interactive demo
+
+Open `demo.html` in a browser for a live, in-browser demo of Medical Markdown parsing. If you've run `s/build-wasm`, the demo uses the Rust parser via WASM; otherwise it falls back to a built-in JS parser.
+
+### WASM build
+
+The WASM package lives in a separate workspace crate (`medical-markdown-wasm/`). To build it:
+
+```bash
+cargo install wasm-pack    # one-time setup
+s/build-wasm               # builds to pkg/
+```
+
+Then serve the project directory over HTTP (e.g. `python3 -m http.server`) and open `demo.html`.
 
 
 ## Basic Specification ##

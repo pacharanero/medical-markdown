@@ -1,0 +1,14 @@
+{
+  "OE": {
+    "RS": "Clear bilaterally",
+    "CVS": "HS I+II+0",
+    "GI": "Soft non-tender",
+    "notes": "General appearance normal"
+  },
+  "_source_map": {
+    "OE": 1,
+    "OE.RS": 2,
+    "OE.CVS": 3,
+    "OE.GI": 4
+  }
+}
