@@ -1,0 +1,67 @@
+# Builds and deploys the interactive Medical Markdown demo to GitHub Pages.
+#
+# The demo is a single static demo.html that loads the Rust parser compiled to
+# WASM (pkg/). Each run rebuilds WASM from source, assembles a minimal
+# demo-dist/ containing just demo.html + pkg/, and hands it to GitHub Pages as
+# a workflow artifact - there is no `gh-pages` branch.
+#
+# Repo prerequisite (one-off): Settings -> Pages -> Source must be set to
+# "GitHub Actions". If it is left at "Deploy from a branch", deploy-pages
+# fails with "Get Pages site failed". This is set once on the repo and
+# persists.
+#
+# Action SHAs are pinned per house style with the matching `# vX.Y.Z` comment.
+
+name: demo
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "demo.html"
+      - "medical-markdown-wasm/**"
+      - "src/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/demo.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          components: clippy, rustfmt
+      - uses: jetli/wasm-pack-action@0d096b08b4e5a7de8c28de67e11e945404e9eefa # v0.4.0
+      - run: s/build-wasm
+      - name: Assemble demo artifact
+        run: |
+          mkdir -p demo-dist/pkg
+          cp demo.html demo-dist/
+          cp -r pkg/* demo-dist/pkg/
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: demo-dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

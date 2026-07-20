@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+#
+# Serve the interactive demo from the repository root and open it in a browser.
+# Uses the first free port in 8000-8030. Pass a port as the first argument to
+# override the auto-pick, for example: s/demo 9000
+#
+# Requires Python 3. Ctrl+C stops the server.
+
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 is required to serve the demo." >&2
+  exit 1
+fi
+
+port_in_use() {
+  if command -v ss >/dev/null 2>&1; then
+    ss -ltnH 2>/dev/null | awk '{print $4}' | awk -F: '{print $NF}' | grep -qx "$1"
+  elif command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+  else
+    (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null
+  fi
+}
+
+if [[ $# -gt 0 && "$1" != -* ]]; then
+  port="$1"
+  shift
+else
+  port=""
+  for candidate in $(seq 8000 8030); do
+    if ! port_in_use "$candidate"; then
+      port="$candidate"
+      break
+    fi
+  done
+
+  if [[ -z "$port" ]]; then
+    echo "No free port found in 8000-8030. Pass a port explicitly: s/demo 9000" >&2
+    exit 1
+  fi
+fi
+
+url="http://localhost:${port}/demo.html"
+echo "Serving demo on $url" >&2
+
+if [[ -n "${BROWSER:-}" ]]; then
+  "$BROWSER" "$url" >/dev/null 2>&1 &
+elif command -v xdg-open >/dev/null 2>&1; then
+  xdg-open "$url" >/dev/null 2>&1 &
+elif command -v open >/dev/null 2>&1; then
+  open "$url" >/dev/null 2>&1 &
+fi
+
+exec python3 -m http.server "$port" --bind localhost "$@"
