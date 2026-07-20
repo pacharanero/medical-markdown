@@ -49,6 +49,7 @@ echo "PC/ chest pain" | s/dev -                             # read from stdin
 | `s/lint` | Run clippy and check formatting |
 | `s/build` | Build an optimised release binary to `target/release/medmd` |
 | `s/build-wasm` | Build the WASM package to `pkg/` (requires `wasm-pack`) |
+| `s/demo` | Serve the interactive demo on the first available local port |
 
 ### Custom codes
 
@@ -103,7 +104,9 @@ cargo test --test conformance
 
 ### Interactive demo
 
-Open `demo.html` in a browser for a live, in-browser demo of Medical Markdown parsing. If you've run `s/build-wasm`, the demo uses the Rust parser via WASM; otherwise it falls back to a built-in JS parser.
+A live version is deployed at <https://pacharanero.github.io/medical-markdown/> - it rebuilds from source on every push to `master` that touches the demo, the WASM crate, or the Rust parser, and serves the Rust parser compiled to WASM.
+
+For local development run `s/demo`: it serves the repository on the first available port in 8000-8030 and opens the demo automatically. Pass a port to override the automatic choice, for example `s/demo 9000`. If you've run `s/build-wasm`, the demo uses the Rust parser via WASM; otherwise it falls back to a built-in JS parser.
 
 ### WASM build
 
@@ -114,7 +117,7 @@ cargo install wasm-pack    # one-time setup
 s/build-wasm               # builds to pkg/
 ```
 
-Then serve the project directory over HTTP (e.g. `python3 -m http.server`) and open `demo.html`.
+Then run `s/demo`.
 
 
 ## Basic Specification ##
@@ -175,6 +178,10 @@ Here are some ways to contribute to the Medical Markdown project:
 * Donate to the project, to allow me to spend more time developing it.
 * Spread the word via social media
 * If the AoMRC headings make sense in your country's flavour of medicine, you could to translate Medical Markdown into your language.
+
+## License ##
+
+This repository is licensed under the [MIT License](LICENSE). This is a deliberate divergence from the house-style default (AGPL-3.0-or-later) - Medical Markdown is intended as a permissive, embeddable format and reference parser, and MIT lowers the barrier to adoption in both open source and proprietary EPR systems.
 
 
 
